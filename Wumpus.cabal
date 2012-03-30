@@ -1,0 +1,17 @@
+Name:                Wumpus
+Version:             1.0
+Synopsis:            A Haskell version of the classic game "Hunt the Wumpus"
+License:             BSD3
+License-file:        LICENSE
+Author:              Federico Squartini
+Maintainer:          federico.squartini@googlemail.com
+Stability:           Stable
+Category:            Game
+Build-type:          Simple
+Cabal-version:       >=1.2
+
+
+Executable wumpus
+           ghc-options:    -Wall -O2
+           Main-is:        Wumpus.lhs
+           Build-depends: base,containers,random,mtl,transformers,MonadRandom
