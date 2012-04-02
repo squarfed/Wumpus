@@ -11,12 +11,12 @@ Imports
 
 > import Data.Char (toUpper)
 > import Data.Map (Map,(!),fromList,insert)
-> import Control.Monad (forM_,replicateM,void,when)
+> import Control.Monad (forM_,forever,replicateM,void,when)
 > import Control.Monad.Error (MonadError,Error,ErrorT,noMsg,
 >                             runErrorT,throwError)
 > import Control.Monad.Random (MonadRandom,Rand,RandT,
 >                              getRandom,getRandoms,getRandomR,getRandomRs,
->                              runRand,runRandT,)
+>                              runRand,runRandT)
 > import Control.Monad.State (MonadState,StateT,gets,modify,runStateT)
 > import Control.Monad.Trans (lift)
 > import Control.Monad.IO.Class (MonadIO,liftIO)
@@ -328,16 +328,11 @@ The main game loop. Initialize characters locations and then start the game:
 >            when debug $ void $ liftIO $
 >                      printf "Wumpus is at %d, pits at %d & %d, bats at %d & %d\n"
 >                      (loc!Wumpus) (loc!Pit1) (loc!Pit2) (loc!Bats1) (loc!Bats2)
->            actionsLoop
-
->
->         actionsLoop :: Game ()
->         actionsLoop = do
->            reportHazards
->            action <- moveOrShoot
->            case action of
->              Shoot -> shoot >> actionsLoop
->              Move  -> move >> actionsLoop
+>            forever $ do reportHazards
+>                         action <- moveOrShoot
+>                         case action of
+>                           Shoot -> shoot
+>                           Move  -> move
 
 Main
 ----
