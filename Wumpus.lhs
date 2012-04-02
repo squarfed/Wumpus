@@ -39,13 +39,13 @@ Data type for the rooms we can be in the game:
 The cave topology, a dodechaedron.
 
 > cave :: Map Room [Room]
-> cave = fromList $ zip [1..20] [[2,5,8],[1,3,10],[2,4,12],
->                                [3,5,14],[1,4,6],[5,7,15],
->                                [6,8,17],[1,7,9],[8,10,18],
->                                [2,9,11],[10,12,19],[3,11,13],
->                                [12,14,20],[4,13,15],[6,14,16],
->                                [15,17,20],[7,16,18],[9,17,19],
->                                [11,18,20],[13,16,19]]
+> cave = fromList $ zip [1..] [[2,5,8],[1,3,10],[2,4,12],
+>                              [3,5,14],[1,4,6],[5,7,15],
+>                              [6,8,17],[1,7,9],[8,10,18],
+>                              [2,9,11],[10,12,19],[3,11,13],
+>                              [12,14,20],[4,13,15],[6,14,16],
+>                              [15,17,20],[7,16,18],[9,17,19],
+>                              [11,18,20],[13,16,19]]
 
 Different characters in the game: you, the wumpus, deadly pits and bats
 which will carry you to random places in the cave.
@@ -302,7 +302,7 @@ Generate starting locations:
 >     where
 >       loop :: Rand StdGen Locations
 >       loop = do
->         let chars = [You .. Bats2]
+>         let chars = [You ..]
 >         loc <- fmap (fromList . zip chars) $ getRandomRs (1,20)
 >         if or [loc!i == loc!j| i <- chars, j <- chars, i < j]
 >             then loop
