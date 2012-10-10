@@ -74,13 +74,6 @@ Actions at your disposal:
 > data Action = Shoot   -- Shoot an arrow
 >             | Move    -- move to a neighboring room
 
-We add an instance of MonadRandom for ErrorT:
-
-> instance (Error e,MonadRandom m) => MonadRandom (ErrorT e m) where
->     getRandom   = lift getRandom
->     getRandoms  = lift getRandoms
->     getRandomR  = lift . getRandomR
->     getRandomRs = lift . getRandomRs
 
 A monad stack with exceptions, global state, random numbers and IO:
 
