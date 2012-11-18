@@ -2,23 +2,24 @@
 % Federico Squartini
 %
 
-> {-# Language GeneralizedNewtypeDeriving,DoAndIfThenElse #-}
+> {-# Language GeneralizedNewtypeDeriving,DoAndIfThenElse,
+>   FlexibleInstances,MultiParamTypeClasses,UndecidableInstances #-}
 
 > module Main where
 
 Imports
 -------
 
+> import Prelude hiding (break)
 > import Data.Char (toUpper)
 > import Data.Map (Map,(!),fromList,insert)
-> import Control.Monad (forM_,forever,replicateM,void,when)
-> import Control.Monad.Error (MonadError,Error,ErrorT,noMsg,
->                             runErrorT,throwError)
+> import Control.Monad (forM_,forever,void,when)
 > import Control.Monad.Random (MonadRandom,Rand,RandT,
 >                              getRandom,getRandoms,getRandomR,getRandomRs,
 >                              runRand,runRandT)
-> import Control.Monad.State (MonadState,StateT,gets,modify,runStateT)
+> import Control.Monad.State (MonadState,StateT,get,gets,put,modify,runStateT)
 > import Control.Monad.Trans (lift)
+> import Control.Monad.Trans.Either
 > import Control.Monad.IO.Class (MonadIO,liftIO)
 > import System.IO (hFlush,stdout)
 > import System.Random (StdGen,getStdGen)
@@ -66,26 +67,39 @@ Game possible outcomes:
 
 > data GameOver = Win | Lose
 
-> instance Error GameOver where
->     noMsg = undefined
-
 Actions at your disposal:
 
 > data Action = Shoot   -- Shoot an arrow
 >             | Move    -- move to a neighboring room
 
+Break from a loop
+
+> break :: GameOver -> Game ()
+> break = Game . EitherT. return . Left
 
 A monad stack with exceptions, global state, random numbers and IO:
 
-> newtype Game a = Game {unGame::ErrorT GameOver (StateT Globals (RandT StdGen IO)) a}
->     deriving (Functor,Monad,MonadIO,MonadState Globals,
->               MonadError GameOver,MonadRandom)
+> newtype Game a = Game {unGame::EitherT GameOver (StateT Globals (RandT StdGen IO)) a}
+>     deriving (Functor,Monad,MonadIO,MonadState Globals,MonadRandom)
+
+A couple of instances for `EitherT`
+
+> instance (MonadRandom m) => MonadRandom (EitherT e m) where
+>     getRandom   = lift getRandom
+>     getRandoms  = lift getRandoms
+>     getRandomR  = lift . getRandomR
+>     getRandomRs = lift . getRandomRs
+
+> instance (MonadState s m) => MonadState s (EitherT e m) where
+>     get = lift get
+>     put = lift . put
+
 
 The monad runner:
 
 > runGame :: StdGen -> Globals -> Game a -> IO (Either GameOver a, StdGen)
 > runGame g s m = do
->     ((outcome,_),g') <- runRandT (runStateT (runErrorT $ unGame m) s) g
+>     ((outcome,_),g') <- runRandT (runStateT (runEitherT $ unGame m) s) g
 >     return (outcome,g')
 
 Random number generators:
@@ -166,9 +180,8 @@ Report hazards in the rooms neighboring yours:
 >              liftIO $ putStrLn "I smell a wumpus!"
 >         else if room == loc!Pit1 || room == loc!Pit2  then
 >              liftIO $ putStrLn "I feel a draft"
->         else if room == loc!Bats1 || room == loc!Bats2 then
+>         else when (room == loc!Bats1 || room == loc!Bats2) $
 >              liftIO $ putStrLn "Bats nearby!"
->         else return ()
 >     void $ liftIO $ printf "You are in room %d\n" (loc!You )
 >     let [r1,r2,r3] = cave!(loc!You)
 >     void $ liftIO $ printf "Tunnels lead to %d %d %d\n\n" r1 r2 r3
@@ -195,7 +208,7 @@ Shoot an arrow:
 >     modify $ \g -> g {arrows = arrows g - 1}
 >     arrs <- gets arrows
 >     case arrs of
->              0 -> throwError Lose
+>              0 -> break Lose
 >              _ -> return ()
 >      where
 
@@ -226,7 +239,7 @@ Shoot the arrow on the given path and check the result:
 
 >        shootOnPath :: Room -> [Room] -> Game ()
 >        shootOnPath scratchLoc =
->            mapM_ $ \r -> if any (== r) (cave!scratchLoc)
+>            mapM_ $ \r -> if r `elem` (cave!scratchLoc)
 >                             then checkShot r
 >                             else checkShot =<< rand3
 
@@ -238,11 +251,10 @@ and lose or hit nothing and go on with the game:
 >            loc <- gets locations
 >            if scratchLoc == loc!Wumpus then
 >                  do liftIO $ putStrLn "AHA! You got the wumpus!"
->                     throwError Win
->            else if scratchLoc == loc!You then
->                  do liftIO $ putStrLn "OUCH! Arrow got you!"
->                     throwError Lose
->            else return ()
+>                     break Win
+>            else when (scratchLoc == loc!You) $ do
+>                             liftIO $ putStrLn "OUCH! Arrow got you!"
+>                             break Lose
 
 Move the wumpus, if he moves in your character's room, you lose:
 
@@ -256,7 +268,7 @@ Move the wumpus, if he moves in your character's room, you lose:
 >    loc <- gets locations
 >    when (loc!Wumpus == loc!You) $
 >         do liftIO $ putStrLn "Tsk tsk tsk - Wumpus got you!"
->            throwError Lose
+>            break Lose
 
 Move the character:
 
@@ -268,7 +280,7 @@ Move the character:
 >           you <- gets $ (!You) . locations
 >           scratchLoc <- liftIO $ getNum "Where to"
 >           if scratchLoc >= 1 && scratchLoc <= 20 &&
->              (scratchLoc == you || (any (== scratchLoc) $ cave!you))
+>              (scratchLoc == you || elem scratchLoc (cave!you))
 >                then return scratchLoc
 >                else do liftIO $ putStrLn "Not possible -"
 >                        getMove
@@ -282,16 +294,15 @@ Move the character:
 >                    moveWumpus
 >          else if scratchLoc == loc!Pit1 || scratchLoc == loc!Pit2 then
 >                 do liftIO $ putStrLn "YYYYIIIIEEEE... Fell in pit"
->                    throwError Lose
->          else if scratchLoc == loc!Bats1 || scratchLoc == loc!Bats2 then
->                 do liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
->                    rand20 >>= goodMove
->          else return ()
+>                    break Lose
+>          else when (scratchLoc == loc!Bats1 || scratchLoc == loc!Bats2) $ do
+>                    liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
+>                    goodMove =<< rand20
 
 Generate starting locations:
 
 > genLocs :: StdGen -> (Locations,StdGen)
-> genLocs g = runRand loop g
+> genLocs = runRand loop
 >     where
 >       loop :: Rand StdGen Locations
 >       loop = do
@@ -306,7 +317,7 @@ The main game loop. Initialize characters locations and then start the game:
 
 > gameLoop :: Locations -> StdGen -> IO ()
 > gameLoop loc g = do
->     (outcome,g') <- runGame g (Globals {locations=loc,arrows=5}) newGame
+>     (outcome,g') <- runGame g Globals {locations=loc,arrows=5} newGame
 >     case outcome of
 >        Left Lose -> putStrLn "HA HA HA - You lose!"
 >        Left Win  -> putStrLn "Hee hee hee - The wumpus'll get you next time!!"
