@@ -1,6 +1,6 @@
 Hunt the Wumpus
 ===============
-A Haskell verion of the classic computer
+A Haskell version of the classic computer
 [game](http://www.atariarchives.org/morebasicgames/showpage.php?page=178).
 
 Build
