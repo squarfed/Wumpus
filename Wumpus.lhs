@@ -2,7 +2,7 @@
 % Federico Squartini
 %
 
-> {-# Language GeneralizedNewtypeDeriving,DoAndIfThenElse,
+> {-# Language GeneralizedNewtypeDeriving,DoAndIfThenElse,MultiWayIf,
 >   FlexibleInstances,MultiParamTypeClasses,UndecidableInstances #-}
 
 > module Main where
@@ -164,12 +164,10 @@ Report hazards in the rooms neighboring yours:
 > reportHazards = do
 >     loc <- gets locations
 >     forM_ (cave!(loc!You)) $ \room ->
->         if room == loc!Wumpus then
->              liftIO $ putStrLn "I smell a wumpus!"
->         else if room == loc!Pit1 || room == loc!Pit2  then
->              liftIO $ putStrLn "I feel a draft"
->         else when (room == loc!Bats1 || room == loc!Bats2) $
->              liftIO $ putStrLn "Bats nearby!"
+>         if | room == loc!Wumpus ->  liftIO $ putStrLn "I smell a wumpus!"
+>            | room == loc!Pit1 || room == loc!Pit2 -> liftIO $ putStrLn "I feel a draft"
+>            | otherwise -> when (room == loc!Bats1 || room == loc!Bats2) $
+>                          liftIO $ putStrLn "Bats nearby!"
 >     void $ liftIO $ printf "You are in room %d\n" (loc!You )
 >     let [r1,r2,r3] = cave!(loc!You)
 >     void $ liftIO $ printf "Tunnels lead to %d %d %d\n\n" r1 r2 r3
@@ -277,13 +275,13 @@ Move the character:
 >       goodMove scratchLoc = do
 >          modify $ \g -> g {locations = insert You scratchLoc (locations g)}
 >          loc <- gets locations
->          if scratchLoc == loc!Wumpus then
+>          if | scratchLoc == loc!Wumpus ->
 >                 do liftIO $ putStrLn "... OOPS! Bumped a wumpus!"
 >                    moveWumpus
->          else if scratchLoc == loc!Pit1 || scratchLoc == loc!Pit2 then
+>             | scratchLoc == loc!Pit1 || scratchLoc == loc!Pit2 ->
 >                 do liftIO $ putStrLn "YYYYIIIIEEEE... Fell in pit"
 >                    break Lose
->          else when (scratchLoc == loc!Bats1 || scratchLoc == loc!Bats2) $ do
+>             | otherwise -> when (scratchLoc == loc!Bats1 || scratchLoc == loc!Bats2) $ do
 >                    liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
 >                    goodMove =<< rand20
 
@@ -334,3 +332,4 @@ Main
 >   c <- getLet "Instructions (Y-N)"
 >   when (c =='Y') printInstructions
 >   uncurry gameLoop . genLocs =<< getStdGen
+
