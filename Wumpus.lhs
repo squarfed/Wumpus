@@ -82,18 +82,6 @@ A monad stack with exceptions, global state, random numbers and IO:
 > newtype Game a = Game {unGame::EitherT GameOver (StateT Globals (RandT StdGen IO)) a}
 >     deriving (Functor,Monad,MonadIO,MonadState Globals,MonadRandom)
 
-A couple of instances for `EitherT`
-
-> instance (MonadRandom m) => MonadRandom (EitherT e m) where
->     getRandom   = lift getRandom
->     getRandoms  = lift getRandoms
->     getRandomR  = lift . getRandomR
->     getRandomRs = lift . getRandomRs
-
-> instance (MonadState s m) => MonadState s (EitherT e m) where
->     get = lift get
->     put = lift . put
-
 
 The monad runner:
 
