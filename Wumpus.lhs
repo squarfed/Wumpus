@@ -278,11 +278,11 @@ Move the character:
 >          if | scratchLoc == loc!Wumpus ->
 >                 do liftIO $ putStrLn "... OOPS! Bumped a wumpus!"
 >                    moveWumpus
->             | scratchLoc == loc!Pit1 || scratchLoc == loc!Pit2 ->
+>             | scratchLoc `elem` [loc!Pit1,loc!Pit2] ->
 >                 do liftIO $ putStrLn "YYYYIIIIEEEE... Fell in pit"
 >                    break Lose
->             | otherwise -> when (scratchLoc == loc!Bats1 || scratchLoc == loc!Bats2) $ do
->                    liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
+>             | otherwise -> when (scratchLoc `elem` [loc!Bats1,loc!Bats2]) $
+>                 do liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
 >                    goodMove =<< rand20
 
 Generate starting locations:
@@ -293,7 +293,7 @@ Generate starting locations:
 >       loop :: Rand StdGen Locations
 >       loop = do
 >         let chars = [You ..]
->         loc <- fmap (fromList . zip chars) $ getRandomRs (1,20)
+>         loc <- (fromList . zip chars) `fmap` getRandomRs (1,20)
 >         if or [loc!i == loc!j| i <- chars, j <- chars, i < j]
 >             then loop
 >             else return loc
