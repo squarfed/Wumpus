@@ -70,8 +70,7 @@ A monad stack with global state, random numbers and IO:
 The monad runner:
 
 > runGame :: Game a -> IO a
-> runGame m = do
->     evalRandT (evalStateT (unGame m) undefined) =<< getStdGen
+> runGame m = evalRandT (evalStateT (unGame m) undefined) =<< getStdGen
 
 > data Branch = Start | GenLocs | ActionsLoop | Lose | Win | AskSetup
 
