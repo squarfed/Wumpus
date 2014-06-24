@@ -14,5 +14,4 @@ Cabal-version:       >=1.2
 Executable wumpus
            ghc-options:    -Wall -O2
            Main-is:        Wumpus.lhs
-           Build-depends: base,containers,random,mtl,transformers,
-                          MonadRandom,either
+           Build-depends: base,containers,random,MonadRandom
