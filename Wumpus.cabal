@@ -5,13 +5,22 @@ License:             BSD3
 License-file:        LICENSE
 Author:              Federico Squartini
 Maintainer:          federico.squartini@googlemail.com
+Homepage:            https://github.com/PositronicBrain/Wumpus
 Stability:           Stable
 Category:            Game
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.10
 
+Source-repository head
+  type:     git
+  location: git://github.com/PositronicBrain/Wumpus
 
 Executable wumpus
-           ghc-options:    -Wall -O2
-           Main-is:        Wumpus.lhs
-           Build-depends: base,containers,random,MonadRandom
+  ghc-options:   -Wall -O2
+  Main-is:       Wumpus.lhs
+  Build-depends: base,
+                 containers,
+                 random,
+                 MonadRandom,
+                 mtl
+  Default-Language: Haskell2010
