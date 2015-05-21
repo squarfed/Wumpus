@@ -12,7 +12,6 @@ Imports
 > import Prelude hiding (break)
 > import Data.Char (toUpper)
 > import Data.Map (Map,(!),fromList,insert)
-> import Control.Applicative
 > import Control.Monad (forM_,foldM_,forever,void,when)
 > import Control.Monad.Random (MonadRandom,RandT,getRandomR,getRandomRs,
 >                              evalRandT)
