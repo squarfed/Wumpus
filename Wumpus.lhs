@@ -9,17 +9,18 @@
 Imports
 -------
 
-> import Prelude hiding (break)
-> import Data.Char (toUpper)
-> import Data.Map (Map,(!),fromList,insert)
-> import Control.Monad (forM_, void, when)
-> import Control.Monad.Random (MonadRandom,RandT,getRandomR,getRandomRs,
->                              evalRandT)
-> import Control.Monad.State (MonadState,StateT,gets,put,modify,evalStateT)
+> import Prelude hiding       (break)
+> import Data.Char            (toUpper)
+> import Data.Map             ((!), Map, fromList, insert)
+> import Control.Monad        (forM_, void, when)
+> import Control.Monad.Random (MonadRandom,  RandT,     getRandomR,
+>                              getRandomRs,  evalRandT            )
+> import Control.Monad.State  (MonadState, StateT,  gets,
+>                              put,        modify,  evalStateT)
 > import Control.Monad.Trans
-> import System.IO (hFlush,stdout)
-> import System.Random (StdGen,getStdGen)
-> import Text.Printf (printf)
+> import System.IO            (hFlush, stdout)
+> import System.Random        (StdGen, getStdGen)
+> import Text.Printf          (printf)
 
 Functions
 ---------
@@ -36,13 +37,13 @@ During the game we can be in one of these rooms:
 The cave topology, a [dodechaedron](http://en.wikipedia.org/wiki/Dodecahedron):
 
 > cave :: Map Room [Room]
-> cave = fromList $ zip [1..] [[2,5,8],[1,3,10],[2,4,12],
->                              [3,5,14],[1,4,6],[5,7,15],
->                              [6,8,17],[1,7,9],[8,10,18],
->                              [2,9,11],[10,12,19],[3,11,13],
->                              [12,14,20],[4,13,15],[6,14,16],
->                              [15,17,20],[7,16,18],[9,17,19],
->                              [11,18,20],[13,16,19]]
+> cave = fromList $ zip [1..] [[2,5,8],    [1,3,10],   [2,4,12],
+>                              [3,5,14],   [1,4,6],    [5,7,15],
+>                              [6,8,17],   [1,7,9],    [8,10,18],
+>                              [2,9,11],   [10,12,19], [3,11,13],
+>                              [12,14,20], [4,13,15],  [6,14,16],
+>                              [15,17,20], [7,16,18],  [9,17,19],
+>                              [11,18,20], [13,16,19]]
 
 Different characters in the game: you, the wumpus, deadly pits and bats
 which will carry you to random places in the cave.
@@ -56,15 +57,19 @@ Type for characters position:
 
 Global variables:
 
-> data Globals = Globals { oldlocations::Locations -- Used to start a new game with previous setup
->                        , locations::Locations    -- Characters locations
->                        , arrows::Int             -- Number of arrows left
+> data Globals = Globals { -- Used to start a new game with previous setup
+>                          oldlocations::Locations
+>                          -- Characters locations
+>                        , locations::Locations
+>                          -- Number of arrows left
+>                        , arrows::Int
 >                        }
 
 A monad stack with global state, random numbers and IO:
 
-> newtype Game a = Game {unGame::StateT Globals (RandT StdGen IO) a}
->     deriving (Applicative,Functor,Monad,MonadIO,MonadState Globals,MonadRandom)
+> newtype Game a = Game { unGame::StateT Globals (RandT StdGen IO) a }
+>     deriving (Applicative,  Functor,             Monad,
+>               MonadIO,      MonadState Globals,  MonadRandom)
 
 The monad runner:
 
@@ -149,12 +154,18 @@ Report hazards in the neighboring rooms:
 > reportHazards = do
 >     liftIO $ putStrLn ""
 >     locs <- gets locations
->     let [r1,r2,r3] = cave!(locs!You)
->     forM_ [r1,r2,r3] $ \ room ->
->         if | room == locs!Wumpus -> liftIO $ putStrLn "I smell a wumpus!"
->            | room `elem` [locs!Pit1,locs!Pit2] -> liftIO $ putStrLn "I feel a draft"
->            | room `elem` [locs!Bats1,locs!Bats2] -> liftIO $ putStrLn "Bats nearby!"
->            | otherwise -> return ()
+>     let rs@[r1,r2,r3] = cave!(locs!You)
+>     forM_ rs $ \ room ->
+>         if | room == locs!Wumpus
+>                            -> liftIO $ putStrLn "I smell a wumpus!"
+
+>            | room `elem` [locs!Pit1,locs!Pit2]
+>                            -> liftIO $ putStrLn "I feel a draft"
+
+>            | room `elem` [locs!Bats1,locs!Bats2]
+>                            -> liftIO $ putStrLn "Bats nearby!"
+
+>            | otherwise     -> return ()
 >     void $ liftIO $ printf "You are in room %d\n" (locs!You)
 >     void $ liftIO $ printf "Tunnels lead to %d %d %d\n\n" r1 r2 r3
 
@@ -177,18 +188,18 @@ Shoot an arrow:
 >     you <- gets $ (!You) . locations
 >     res <- shootOnPath you rs
 >     case res of
->       Missed ->  do liftIO $ putStrLn "Missed"
->                     w <- moveWumpus
->                     case w of
->                       Lose -> return Lose
->                       _    -> decreaseArrows
->       _ -> return res
+>       Missed -> do liftIO $ putStrLn "Missed"
+>                    res <- moveWumpus
+>                    case res of
+>                      Lose -> return Lose
+>                      _    -> decreaseArrows
+>       _      -> return res
 
-Decrease the number of arrows by one
+Decrease the number of arrows by one:
 
 > decreaseArrows :: Game Branch
 > decreaseArrows = do 
->   modify $ \g -> g {arrows = arrows g - 1}
+>   modify $ \g -> g { arrows = arrows g - 1 }
 >   arrs <- gets arrows
 >   case arrs of
 >       0 -> return Lose
@@ -198,9 +209,8 @@ How many rooms we want to shoot the arrow through:
 
 > getRange :: MonadIO m => m Room
 > getRange = do n <- liftIO $ getNum "No. of rooms (1-5)"
->               if n < 1 || n > 5
->                 then getRange
->                 else return n
+>               if | n < 1 || n > 5 -> getRange
+>                  | otherwise      -> return n
 
 Which room numbers we want to shoot through:
 
@@ -210,11 +220,13 @@ Which room numbers we want to shoot through:
 >     go :: MonadIO m => Int -> [Room] -> m [Room]
 >     go 0 path = return $ reverse path
 >     go k path = do room <- liftIO $ getNum "Room #"
->                    if k >= n-1 || room /= path!!1
->                      then go (k-1) (room:path)
->                      else do liftIO $ putStrLn "Arrows aren't that crooked\
->                                                \ - Try another room"
->                              go k path
+>                    if | k >= n-1 || room /= path!!1 -> 
+>                                 go (k-1) (room:path)
+>
+>                       | otherwise ->
+>                              do liftIO $ putStrLn "Arrows aren't that crooked\
+>                                                   \ - Try another room"
+>                                 go k path
 
 Shoot the arrow on the given path and check the result. If one of the rooms we
 input is not a neighboring one, substitute it with a random neighbor:
@@ -222,15 +234,17 @@ input is not a neighboring one, substitute it with a random neighbor:
 > shootOnPath :: Room -> [Room] -> Game Branch
 > shootOnPath _ [] = return Missed
 > shootOnPath scratchLoc (r:rs) = do
->   if | r `elem` cave!scratchLoc  -> do x <- checkShot r
->                                        case x of
->                                          Missed -> shootOnPath r rs
->                                          _      -> return x
+>   if | r `elem` cave!scratchLoc ->
+>                     do res <- checkShot r
+>                        case res of
+>                          Missed -> shootOnPath r rs
+>                          _      -> return res
+>
 >      | otherwise -> do r' <- rand3 
->                        x <- checkShot $ (cave!scratchLoc)!!(r'-1)
->                        case x of
->                           Missed ->  shootOnPath r rs
->                           _  -> return x
+>                        res <- checkShot $ (cave!scratchLoc)!!(r'-1)
+>                        case res of
+>                          Missed -> shootOnPath r rs
+>                          _      -> return res
 
 Check the result of a shot. We can hit the wumpus and win, hit ourself
 and lose or hit nothing and go on with the game:
@@ -239,11 +253,13 @@ and lose or hit nothing and go on with the game:
 > checkShot scratchLoc = do
 >   locs <- gets locations
 >   if | scratchLoc == locs!Wumpus ->
->            do liftIO $ putStrLn "AHA! You got the wumpus!"
->               return Win
+>                  do liftIO $ putStrLn "AHA! You got the wumpus!"
+>                     return Win
+>
 >      | scratchLoc == locs!You ->
->            do liftIO $ putStrLn "OUCH! Arrow got you!"
->               return Lose
+>                  do liftIO $ putStrLn "OUCH! Arrow got you!"
+>                     return Lose
+>
 >      | otherwise -> return Missed
 
 When the Wumpus is disturbed it moves to a neighbor room with probability 75\%.
@@ -255,11 +271,12 @@ If after the move he is in our room we lose:
 >   when (k <= 3) $
 >      modify $ \g -> let locs = locations g
 >                         wumpusNewRoom = cave!(locs!Wumpus)!!(k-1)
->                     in g {locations = insert Wumpus wumpusNewRoom locs}
+>                     in g { locations = insert Wumpus wumpusNewRoom locs }
 >   locs <- gets locations
->   if | (locs!Wumpus == locs!You) ->
->                do liftIO $ putStrLn "Tsk tsk tsk - Wumpus got you!"
->                   return Lose
+>   if | locs!Wumpus == locs!You ->
+>                  do liftIO $ putStrLn "Tsk tsk tsk - Wumpus got you!"
+>                     return Lose
+>
 >      | otherwise -> return ActionsLoop
 
 Move the character:
@@ -274,7 +291,7 @@ Get the room number we want to move to and check if it's a neighbor:
 >   you <- gets $ (!You) . locations
 >   scratchLoc <- liftIO $ getNum "Where to"
 >   if scratchLoc >= 1 && scratchLoc <= 20 &&
->      (scratchLoc == you || scratchLoc `elem` (cave!you))
+>      (scratchLoc == you || scratchLoc `elem` cave!you)
 >        then return scratchLoc
 >        else do liftIO $ putStrLn "Not possible -"
 >                getMove
@@ -304,9 +321,8 @@ Generate the starting locations:
 >       loop = do
 >         let chars = [You ..]
 >         locs <- fromList . zip chars <$> getRandomRs (1,20)
->         if or [locs!i == locs!j| i <- chars, j <- chars, i < j]
->             then loop
->             else return locs
+>         if | or [locs!i == locs!j| i <- chars, j <- chars, i < j] -> loop
+>            | otherwise                                            -> return locs
 
 
 The main game loop.
@@ -315,23 +331,24 @@ The main game loop.
 > gameLoop branch  = case branch of
 >   Start -> do c <- getLet "Instructions (Y-N)"
 >               when (c =='Y') printInstructions
+>               liftIO $ putStrLn "HUNT THE WUMPUS"
 >               gameLoop GenLocs
 >   GenLocs -> do locs <- genLocs
 >                 when debug $ void $ liftIO $
 >                    printf "Wumpus is at %d, pits at %d & %d, bats at %d & %d\n"
->                    (locs!Wumpus) (locs!Pit1) (locs!Pit2) (locs!Bats1) (locs!Bats2)
->                 put $ Globals {oldlocations=locs,locations=locs,arrows=5}
->                 liftIO $ putStrLn "HUNT THE WUMPUS"
+>                           (locs!Wumpus) (locs!Pit1) (locs!Pit2)
+>                           (locs!Bats1)  (locs!Bats2)
+>                 put $ Globals { oldlocations=locs, locations=locs, arrows=5 }
 >                 gameLoop ActionsLoop
 >   ActionsLoop -> do reportHazards
 >                     action <- moveOrShoot
 >                     result <- case action of
->                                  Move -> move
+>                                  Move  -> move
 >                                  Shoot -> shoot
 >                     case result of
->                       Win   -> gameLoop Win
->                       Lose  -> gameLoop Lose
->                       _ -> gameLoop ActionsLoop
+>                       Win  -> gameLoop Win
+>                       Lose -> gameLoop Lose
+>                       _    -> gameLoop ActionsLoop
 >   Lose -> do liftIO $ putStrLn "HA HA HA - You lose!"
 >              gameLoop AskSetup
 >   Win  -> do liftIO $ putStrLn "Hee hee hee - The wumpus'll get you next time!!"
