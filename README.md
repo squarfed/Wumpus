@@ -14,4 +14,4 @@ Build documentation
 You need to have [pandoc](http://johnmacfarlane.net/pandoc/index.html)
 installed. Then issue:
 
-    pandoc -f markdown+lhs --no-highlight -o Wumpus.pdf Wumpus.lhs
+    bash makedoc.sh

@@ -1,0 +1,69 @@
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\definecolor{light-gray}{gray}{0.85}
+\lstdefinelanguage{Haskell}{
+    keywords={
+       case, class, data, default, deriving, do, else,
+       foreign, if, import, in, infix, infixl, infixr,
+       instance, let, module, newtype, of, then, type,
+       where, _, forall, ccall },
+    otherkeywords={.., ::, |, @, ~},
+    sensitive,
+    comment=[l]{--},
+    morecomment=[s]{\{-}{-\}},
+    string=[b]{"},
+    breaklines=false,
+    breakautoindent=false,
+    breakatwhitespace=false,
+    literate={\ +\ }{{$+$}}1
+             {\ -\ }{{$-$}}1
+             {\ *\ }{{$*$}}1
+             {\ /\ }{{$/$}}1
+             {\ =\ }{{$=$}}3
+             {\ >\ }{{$>$}}3
+             {\ <\ }{{$<$}}3
+             {\ <=\ }{{$\leq$}}4
+             {\ >=\ }{{$\geq$}}4
+             {//=}{{$\neq$}}2
+             {\ ->\ }{{$\rightarrow$}}4
+             {\ =>\ }{{$\Rightarrow$}}4
+             {\ <-\ }{{$\leftarrow$}}4
+             {forall}{{$\forall$}}1
+             {&&}{{$\land$}}2
+             {||}{{$\lor$}}2
+             {::}{{$\in$}}2
+             {\ .\ }{{$\cdot$}}3
+}
+
+\lstset{
+    inputencoding={utf8},
+    language=Haskell,
+    columns=fixed,
+    basewidth=.5em,
+    basicstyle=\small\ttfamily\fontseries{m}\fontshape{n}\selectfont\color{black},
+    identifierstyle=\small\ttfamily\fontseries{m}\fontshape{n}\selectfont\color{black},
+    backgroundcolor=\color{white},
+    keywordstyle = \small\bfseries\ttfamily\selectfont\color{black},
+    commentstyle=\small\ttfamily\fontseries{l}\fontshape{sl}\selectfont\color{black},
+    stringstyle=\small\ttfamily\color{Black},
+    numbers=none,
+    firstnumber=last,
+    numberstyle=\tiny\color{gray},
+    numbersep=2em,
+    stepnumber=1,
+    xleftmargin=2em,
+    xrightmargin=0em,
+    showspaces=false,
+    showstringspaces=false,
+    frame=none,
+    framexleftmargin=1em,
+    framesep=0.1pt,
+    rulecolor=\color{Black},
+}
+
+\lstMakeShortInline[numbers=none]{\|}
