@@ -22,5 +22,6 @@ Executable wumpus
                  containers,
                  random,
                  MonadRandom,
-                 mtl
+                 mtl,
+                 either
   Default-Language: Haskell2010
