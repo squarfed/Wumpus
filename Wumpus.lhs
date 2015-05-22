@@ -288,16 +288,15 @@ Move to the choosen room and do something depeding on what's in there:
 > goodMove scratchLoc = do
 >   modify $ \g -> g {locations = insert You scratchLoc (locations g)}
 >   locs <- gets locations
->   if | scratchLoc == locs!Wumpus ->
+>   when (scratchLoc == locs!Wumpus) $
 >            do liftIO $ putStrLn "... OOPS! Bumped a wumpus!"
 >               moveWumpus
->      | scratchLoc `elem` [locs!Pit1,locs!Pit2] ->
+>   when (scratchLoc `elem` [locs!Pit1,locs!Pit2]) $
 >            do liftIO $ putStrLn "YYYYIIIIEEEE... Fell in pit"
 >               left Lose
->      | scratchLoc `elem` [locs!Bats1,locs!Bats2] ->
+>   when (scratchLoc `elem` [locs!Bats1,locs!Bats2]) $
 >            do liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
 >               goodMove =<< rand20
->      | otherwise -> return ()
 
 Generate the starting locations:
 
