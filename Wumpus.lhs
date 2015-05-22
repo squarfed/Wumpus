@@ -198,9 +198,7 @@ Decrease the number of arrows by one:
 > decreaseArrows = do 
 >   modify $ \g -> g { arrows = arrows g - 1 }
 >   arrs <- gets arrows
->   case arrs of
->       0 -> left Lose
->       _ -> return ()
+>   when (arrs == 0) $ left Lose
 
 How many rooms we want to shoot the arrow through:
 
