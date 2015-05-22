@@ -189,7 +189,7 @@ Shoot an arrow:
 >     you <- gets $ (!You) . locations
 >     shootOnPath you rs
 >     liftIO $ putStrLn "Missed"
->     moveWumpus -- accomodate decreaseArrwows
+>     moveWumpus
 >     decreaseArrows
 
 Decrease the number of arrows by one:
@@ -200,7 +200,7 @@ Decrease the number of arrows by one:
 >   arrs <- gets arrows
 >   case arrs of
 >       0 -> left Lose
->       _ -> left ActionsLoop
+>       _ -> return ()
 
 How many rooms we want to shoot the arrow through:
 
@@ -263,11 +263,9 @@ If after the move he is in our room we lose:
 >                         wumpusNewRoom = cave!(locs!Wumpus)!!(k-1)
 >                     in g { locations = insert Wumpus wumpusNewRoom locs }
 >   locs <- gets locations
->   if | locs!Wumpus == locs!You ->
+>   when (locs!Wumpus == locs!You) $
 >                  do liftIO $ putStrLn "Tsk tsk tsk - Wumpus got you!"
 >                     left Lose
->
->      | otherwise -> left ActionsLoop
 
 Move the character:
 
@@ -301,7 +299,7 @@ Move to the choosen room and do something depeding on what's in there:
 >      | scratchLoc `elem` [locs!Bats1,locs!Bats2] ->
 >            do liftIO $ putStrLn "ZAP--SUPER BAT SNATCH! Elsewhereville for you!"
 >               goodMove =<< rand20
->      | otherwise -> left ActionsLoop
+>      | otherwise -> return ()
 
 Generate the starting locations:
 
@@ -332,11 +330,9 @@ The main game loop.
 >                 gameLoop ActionsLoop
 >   ActionsLoop -> do reportHazards
 >                     action <- moveOrShoot
->                     result <- case action of
->                                  Move  -> runEitherT move
->                                  Shoot -> runEitherT shoot
->                     case result of
->                       Left x  -> gameLoop x
+>                     eitherT gameLoop (const $ gameLoop ActionsLoop) $ case action of
+>                                                                         Move  -> move
+>                                                                         Shoot -> shoot
 >   Lose -> do liftIO $ putStrLn "HA HA HA - You lose!"
 >              gameLoop AskSetup
 >   Win  -> do liftIO $ putStrLn "Hee hee hee - The wumpus'll get you next time!!"
